@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Trace — E5 Section Animations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;450;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --e3-bg: #f6f4ef;
+    --e3-bg-2: #ecebe5;
+    --e3-ink: #14161a;
+    --e3-ink-2: #3a3d43;
+    --e3-muted: #7a7971;
+    --e3-line: #d9d6cc;
+    --e3-accent: #504fe9;
+    --e3-accent-ink: #3f3ed1;
+    --e3-accent-soft: #eeeefd;
+    --e3-neg: #c2421f;
+    --e3-pos: #1a6d3c;
+    --e3-sans: "Geist", Helvetica, Arial, sans-serif;
+    --e3-mono: "Geist Mono", ui-monospace, Menlo, monospace;
+    --e3-serif-accent: "Instrument Serif", "Source Serif Pro", Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--e3-bg);
+    font-family: var(--e3-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "ss01","cv11";
+  }
+
+  .host {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 28px 32px 32px;
+    gap: 22px;
+  }
+  .host-head {
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap: 24px; flex-wrap: wrap;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--e3-line);
+  }
+  .host-head .title {
+    font-family: var(--e3-mono);
+    font-size: 11px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--e3-muted);
+    line-height: 1.4;
+  }
+  .host-head .title b { color: var(--e3-ink); font-weight: 500; }
+  .host-head .title .meta { display:block; margin-top: 4px; font-size: 10px; letter-spacing: 0.14em; color: var(--e3-muted); text-transform: uppercase; }
+  .host-tabs { display:flex; gap: 6px; }
+  .host-tab {
+    font-family: var(--e3-mono);
+    font-size: 10.5px; letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 9px 16px;
+    border: 1px solid var(--e3-line);
+    border-radius: 999px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--e3-ink-2);
+    transition: all 0.18s ease;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .host-tab:hover { color: var(--e3-ink); border-color: var(--e3-ink); }
+  .host-tab.active {
+    background: var(--e3-ink);
+    color: var(--e3-bg);
+    border-color: var(--e3-ink);
+  }
+  .host-stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .host-stage .frame-wrap {
+    width: 100%;
+    max-width: 760px;
+  }
+  .host-foot {
+    font-family: var(--e3-mono);
+    font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--e3-muted);
+    text-align: center;
+    padding-top: 18px;
+    border-top: 1px solid var(--e3-line);
+  }
+  .host-foot code {
+    background: var(--e3-bg-2);
+    padding: 2px 7px; border-radius: 3px;
+    color: var(--e3-ink-2);
+    letter-spacing: 0.04em;
+    font-size: 10.5px;
+  }
+
+  /* Embed mode: clean iframe-friendly view (triggered by ?anim= or ?embed=1) */
+  body.embed .host-head,
+  body.embed .host-foot { display: none; }
+  body.embed .host { padding: 0; gap: 0; min-height: 100vh; }
+  body.embed .host-stage .frame-wrap { max-width: none; height: 100%; }
+  body.embed .host-stage { padding: 0; }
+  body.embed .e5-anim-frame { aspect-ratio: auto; height: 100vh; border-radius: 0; border: none; }
+
+  /* ── E5 animation styles (extracted from directionE5) ── */
+  .e5-anim-frame { position: relative; aspect-ratio: 4 / 3; width: 100%; border: 1px solid var(--e3-line); border-radius: 4px; overflow: hidden; background: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 1.5px) 0 0 / 12px 12px, var(--e3-bg); }
+        .e5-phase-tint { position: absolute; inset: 0; background: rgba(94,107,124,0.10); pointer-events: none; z-index: 0; transition: opacity 0.6s ease; }
+
+        /* ─ §1 Siloed → Tree ─ */
+        .e5-sl-card { position: absolute; background: var(--e3-bg); border: 1px solid var(--e3-line); border-radius: 4px; padding: 8px 10px 10px; font-family: var(--e3-mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--e3-muted); box-shadow: 0 4px 16px rgba(0,0,0,0.04); transition: opacity 0.7s ease, transform 0.7s ease; }
+        .e5-sl-card .e5-sl-spark { display: block; margin-top: 6px; height: 22px; }
+        .e5-sl-card .e5-sl-num { font-family: var(--e3-sans); font-size: 13px; font-weight: 500; color: var(--e3-ink); letter-spacing: -0.02em; margin-top: 4px; text-transform: none; }
+        .e5-sl-card .e5-sl-redot { width: 5px; height: 5px; border-radius: 50%; background: var(--e3-accent-ink); display:inline-block; margin-left: 6px; vertical-align: middle; }
+
+        .e5-tree-svg { position:absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+        .e5-tree-node { position: absolute; transform: translate(-50%, -50%); background: var(--e3-bg); border: 1px solid var(--e3-line); border-radius: 3px; padding: 6px 10px 7px; font-family: var(--e3-sans); font-size: 11px; font-weight: 500; letter-spacing: -0.01em; color: var(--e3-ink); white-space: nowrap; transition: opacity 0.6s ease, transform 0.6s ease, border-color 0.6s ease; }
+        .e5-tree-node.root { border-color: var(--e3-ink); padding: 8px 14px 9px; font-size: 12.5px; }
+        .e5-tree-node .e5-tn-tag { font-family: var(--e3-mono); font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--e3-muted); display: block; margin-bottom: 2px; }
+        .e5-tree-edge-glyph { position: absolute; transform: translate(-50%, -50%); font-family: var(--e3-mono); font-size: 11px; color: var(--e3-accent-ink); background: var(--e3-bg); padding: 0 4px; }
+
+        /* ─ §2 Clock → Spotlight ─ */
+        .e5-clock { position:absolute; left:50%; top:42%; transform: translate(-50%,-50%); width: 130px; height: 130px; border: 1.5px solid var(--e3-ink); border-radius: 50%; background: var(--e3-bg); }
+        .e5-clock .e5-clock-tick { position:absolute; left:50%; top:4px; width:1px; height:8px; background: var(--e3-ink); transform-origin: 0.5px 61px; }
+        .e5-clock .e5-clock-hand { position:absolute; left:50%; top:50%; width: 1.5px; background: var(--e3-ink); transform-origin: 0.75px 0; }
+        .e5-clock .e5-clock-hand.h { height: 38px; transform: translate(-50%, 0) rotate(0deg); }
+        .e5-clock .e5-clock-hand.m { height: 54px; background: var(--e3-accent-ink); }
+        .e5-clock .e5-clock-pivot { position:absolute; left:50%; top:50%; width:6px; height:6px; margin:-3px; border-radius:50%; background: var(--e3-ink); }
+
+        .e5-spot-tree { position:absolute; inset: 0; }
+        .e5-spot-node { position:absolute; transform: translate(-50%,-50%); background: var(--e3-bg); border: 1px solid var(--e3-line); border-radius: 3px; padding: 5px 9px 6px; font-family: var(--e3-sans); font-size: 10.5px; font-weight: 500; color: var(--e3-ink); white-space: nowrap; }
+        .e5-spot-node.root { border-color: var(--e3-ink); }
+        .e5-spot-node.lit { border-color: var(--e3-accent-ink); box-shadow: 0 0 0 3px rgba(80,79,233,0.12); }
+        .e5-spark { position: absolute; left: 50%; top: 56%; transform: translate(-50%,0); width: 78%; height: 56px; background: var(--e3-bg); border: 1px solid var(--e3-line); border-radius: 4px; padding: 8px 10px; }
+        .e5-spark-label { font-family: var(--e3-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--e3-muted); }
+        .e5-driver-panel { position:absolute; right: 6%; top: 14%; width: 38%; background: var(--e3-bg); border: 1px solid var(--e3-line); border-radius: 4px; padding: 12px; }
+        .e5-driver-panel .e5-dp-h { font-family: var(--e3-mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--e3-accent-ink); margin-bottom: 10px;}
+        .e5-driver-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; font-family: var(--e3-sans); font-size: 10.5px; color: var(--e3-ink); margin-bottom: 6px;}
+        .e5-driver-bar-wrap { position: relative; height: 4px; background: var(--e3-line); border-radius: 2px; margin-top: 3px; grid-column: 1 / -1; overflow: hidden; }
+        .e5-driver-bar { position: absolute; left:0; top:0; bottom:0; background: var(--e3-accent-ink); transition: width 0.7s cubic-bezier(.2,.7,.2,1); }
+        .e5-driver-row .e5-driver-pct { font-family: var(--e3-mono); font-variant-numeric: tabular-nums; color: var(--e3-ink-2); font-size: 10px; }
+
+        /* ─ §3 AutoScan chat ─ */
+        .e5-chat { position:absolute; inset: 0; padding: 22px 26px; display:flex; flex-direction: column; gap: 10px; overflow: hidden; font-family: var(--e3-sans); box-sizing: border-box; }
+        .e5-chat-bubble { max-width: 78%; font-size: 13px; line-height: 1.45; padding: 10px 14px; border-radius: 14px; opacity: 0; transform: translateY(6px); transition: opacity 0.35s ease, transform 0.35s ease; box-sizing: border-box; word-wrap: break-word; }
+        .e5-chat-bubble.show { opacity: 1; transform: none; }
+        .e5-chat-bubble.user { align-self: flex-end; background: var(--e3-ink); color: var(--e3-bg); border-bottom-right-radius: 4px; }
+        .e5-chat-bubble.agent { align-self: flex-start; background: #f0ede5; color: var(--e3-ink); border-bottom-left-radius: 4px; }
+        .e5-chat-bubble.status { align-self: flex-start; background: transparent; color: var(--e3-muted); padding: 4px 14px; font-family: var(--e3-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; display:inline-flex; align-items:center; gap: 8px;}
+        .e5-chat-bubble.status .e5-spinner { width: 9px; height: 9px; border: 1.5px solid var(--e3-line); border-top-color: var(--e3-accent-ink); border-radius: 50%; animation: e5spin 0.9s linear infinite; }
+        @keyframes e5spin { to { transform: rotate(360deg);} }
+        .e5-chat-bubble.result { align-self: flex-start; background: var(--e3-bg); border: 1px solid var(--e3-line); color: var(--e3-ink); padding: 12px 14px; border-radius: 8px; font-size: 12.5px; max-width: 92%; }
+        .e5-chat-bubble.result .e5-result-head { font-family: var(--e3-mono); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--e3-muted); margin-bottom: 8px; }
+        .e5-driver-row-v2 { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--e3-line); transition: all 0.5s ease;}
+        .e5-driver-row-v2:last-of-type { border-bottom: none; }
+        .e5-driver-row-v2.active { color: var(--e3-accent-ink); font-weight: 600;}
+        .e5-driver-row-v2 .e5-d-name { font-size: 12px; letter-spacing: -0.01em;}
+        .e5-impact-pill { font-family: var(--e3-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; font-weight: 600; }
+        .e5-impact-pill.high { background: rgba(80,79,233,0.16); color: var(--e3-accent-ink); }
+        .e5-impact-pill.med  { background: rgba(0,0,0,0.06); color: var(--e3-ink-2); }
+        .e5-impact-pill.low  { background: rgba(0,0,0,0.04); color: var(--e3-muted); }
+        .e5-driver-row-v2.active .e5-impact-pill.high { background: var(--e3-accent-ink); color: #fff; }
+        .e5-nested { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--e3-line); transition: all 0.5s ease;}
+        .e5-nested-h { font-family: var(--e3-mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--e3-muted); margin-bottom: 8px;}
+        .e5-shift { display: flex; align-items: center; gap: 8px; font-size: 13px; letter-spacing: -0.01em; margin-bottom: 8px;}
+        .e5-shift-from { color: var(--e3-muted);}
+        .e5-shift-arrow { font-family: var(--e3-mono); color: var(--e3-muted); font-size: 11px;}
+        .e5-shift-to { color: var(--e3-accent-ink); font-weight: 600;}
+        .e5-explain { font-size: 11.5px; color: var(--e3-ink-2); line-height: 1.5; letter-spacing: -0.005em;}
+        .e5-hi { background: rgba(80,79,233,0.16); color: var(--e3-accent-ink); padding: 0 4px; border-radius: 2px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+        /* §2 v2 — calendar flip + tree spine + anomaly band + segmentation */
+        .e5-cal { position:absolute; left: 64%; top: 38%; transform: translate(-50%,-50%); width: 56px; background: var(--e3-bg); border: 1px solid var(--e3-ink); border-radius: 4px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.06); font-family: var(--e3-mono); }
+        .e5-cal-top { background: var(--e3-accent-ink); color: #fff; font-size: 8px; letter-spacing: 0.16em; text-transform: uppercase; text-align: center; padding: 3px 0;}
+        .e5-cal-day { font-family: var(--e3-sans); font-weight: 500; font-size: 22px; text-align: center; padding: 4px 0 6px; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums;}
+        .e5-cal-mon { font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; text-align: center; color: var(--e3-muted); padding: 0 0 5px;}
+        .e5-spine-node { position: absolute; transform: translate(-50%,-50%); background: var(--e3-bg); border: 1px solid var(--e3-line); border-radius: 3px; padding: 6px 11px 7px; font-family: var(--e3-sans); font-size: 11px; font-weight: 500; color: var(--e3-ink); white-space: nowrap; transition: opacity 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease, color 0.5s ease;}
+        .e5-spine-node.root { border-color: var(--e3-ink); }
+        .e5-spine-node.dim { opacity: 0.28; }
+        .e5-spine-node.lit { border-color: var(--e3-neg, #c2421f); box-shadow: 0 0 0 3px rgba(194,66,31,0.14); }
+        .e5-spine-edge-label { position:absolute; transform: translate(-50%,-50%); font-family: var(--e3-mono); font-size: 10px; padding: 2px 6px; background: var(--e3-bg); border: 1px solid var(--e3-line); border-radius: 2px; color: var(--e3-muted); transition: opacity 0.5s ease, background 0.5s ease, border-color 0.5s ease, color 0.5s ease, font-weight 0.5s ease;}
+        .e5-spine-edge-label.lit { background: #4d1f1a; border-color: #d97158; color: #fff; font-weight: 600; box-shadow: 0 0 0 3px rgba(217,113,88,0.14);}
+        .e5-detail-panel { position: absolute; left: 6%; right: 6%; bottom: 6%; background: var(--e3-bg); border: 1px solid var(--e3-line); border-radius: 4px; padding: 12px 14px; box-shadow: 0 6px 22px rgba(0,0,0,0.06); transition: opacity 0.5s ease, transform 0.5s ease;}
+        .e5-detail-head { display: flex; justify-content: space-between; align-items: center; font-family: var(--e3-mono); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--e3-muted); margin-bottom: 8px;}
+        .e5-detail-head .e5-dh-tag { color: var(--e3-neg, #c2421f);}
+        .e5-detail-title { font-family: var(--e3-sans); font-size: 12px; color: var(--e3-ink); font-weight: 500; letter-spacing: -0.01em;}
+        .e5-anomaly-flag { position: absolute; padding: 4px 8px; background: var(--e3-neg, #c2421f); color: #fff; font-family: var(--e3-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; border-radius: 2px; transform: translate(-50%, -120%); white-space: nowrap;}
+        .e5-anomaly-flag::after { content: ''; position: absolute; left: 50%; bottom: -3px; width: 1px; height: 6px; background: var(--e3-neg, #c2421f); transform: translateX(-0.5px);}
+        .e5-seg-row { display: grid; grid-template-columns: 70px 1fr 56px; gap: 10px; align-items: center; font-family: var(--e3-sans); font-size: 11px; color: var(--e3-ink); padding: 4px 0;}
+        .e5-seg-row .e5-seg-bar-wrap { position: relative; height: 5px; background: var(--e3-line); border-radius: 2px; overflow: hidden;}
+        .e5-seg-row .e5-seg-bar { position: absolute; top:0; bottom:0; left: 50%; background: var(--e3-ink); transition: width 0.6s cubic-bezier(.2,.7,.2,1), background 0.4s ease;}
+        .e5-seg-row.neg .e5-seg-bar { background: var(--e3-neg, #c2421f); transform-origin: right; right: 50%; left: auto;}
+        .e5-seg-row .e5-seg-pct { font-family: var(--e3-mono); font-variant-numeric: tabular-nums; font-size: 10.5px; text-align: right;}
+        .e5-seg-row.neg .e5-seg-pct { color: var(--e3-neg, #c2421f);}
+
+        /* §3 v2 — pills + activated row + nested partnerships→paid */
+        .e5-impact-pill { display:inline-flex; align-items:center; gap: 6px; font-family: var(--e3-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; font-weight: 500; }
+        .e5-impact-pill.high { background: var(--e3-ink); color: var(--e3-bg);}
+        .e5-impact-pill.med { background: rgba(20,22,26,0.14); color: var(--e3-ink);}
+        .e5-impact-pill.low { background: transparent; border: 1px solid var(--e3-line); color: var(--e3-muted);}
+        .e5-driver-row-v2 { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 6px; transition: opacity 0.45s ease, background 0.45s ease, transform 0.45s ease, border-color 0.45s ease; border: 1px solid transparent;}
+        .e5-driver-row-v2.active { background: rgba(80,79,233,0.06); border-color: rgba(80,79,233,0.35);}
+        .e5-driver-row-v2 .e5-d-name { font-family: var(--e3-sans); font-size: 12.5px; color: var(--e3-ink); font-weight: 500; letter-spacing: -0.005em;}
+        .e5-nested { margin-top: 8px; padding: 10px 12px; background: var(--e3-bg); border: 1px dashed rgba(80,79,233,0.4); border-radius: 6px; transition: opacity 0.5s ease, transform 0.5s ease;}
+        .e5-nested-h { font-family: var(--e3-mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--e3-muted); margin-bottom: 6px;}
+        .e5-shift { display: inline-flex; align-items: center; gap: 6px; font-family: var(--e3-sans); font-size: 12.5px; font-weight: 500; color: var(--e3-ink); letter-spacing: -0.005em; margin: 2px 0 6px;}
+        .e5-shift-from { padding: 2px 7px; background: var(--e3-line); border-radius: 4px; color: var(--e3-ink-2); font-size: 11.5px;}
+        .e5-shift-to { padding: 2px 7px; background: rgba(80,79,233,0.16); color: var(--e3-accent-ink); border-radius: 4px; font-size: 11.5px;}
+        .e5-shift-arrow { color: var(--e3-muted); font-family: var(--e3-mono);}
+        .e5-explain { font-family: var(--e3-sans); font-size: 12px; line-height: 1.5; color: var(--e3-ink-2);}
+        .e5-explain .e5-hi { background: rgba(80,79,233,0.16); color: var(--e3-accent-ink); padding: 0 4px; border-radius: 2px; font-weight: 600; font-variant-numeric: tabular-nums;}
+        .e5-typing { display: inline-flex; gap: 4px; align-items: center; }
+        .e5-typing span { width: 4px; height: 4px; border-radius: 50%; background: var(--e3-muted); animation: e5dot 1.2s infinite ease-in-out; }
+        .e5-typing span:nth-child(2) { animation-delay: 0.15s; }
+        .e5-typing span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes e5dot { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0);} 30% { opacity: 1; transform: translateY(-2px);}
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel">
+  (function(){
+    const { useState, useEffect, useRef } = React;
+
+// ── Generic looping clock hook (returns t in [0..1] over `dur` ms) ──
+  function useLoop(dur) {
+    const [t, setT] = useState(0);
+    useEffect(() => {
+      let raf, start = null, alive = true;
+      const tick = (ts) => {
+        if (!alive) return;
+        if (start == null) start = ts;
+        const e = ((ts - start) % dur) / dur;
+        setT(e);
+        raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+      return () => { alive = false; cancelAnimationFrame(raf); };
+    }, [dur]);
+    return t;
+  }
+  function seg(t, a, b) {
+    if (t <= a) return 0;
+    if (t >= b) return 1;
+    return (t - a) / (b - a);
+  }
+  function ease(x) { return x < 0.5 ? 2*x*x : 1 - Math.pow(-2*x+2, 2)/2; }
+
+  // ────────────────────────────────────────────────────────
+  // §1  Siloed dashboards → Metric tree
+  // ────────────────────────────────────────────────────────
+  const SILOED = [
+    { name: 'Revenue',          pos:[10, 8],  spark:'M2 18 L10 14 L18 16 L26 9 L34 12 L42 7 L50 10', red: false, num:'$8.4M' },
+    { name: 'New Revenue',      pos:[36, 6],  spark:'M2 14 L10 12 L18 13 L26 10 L34 8 L42 11 L50 7',  red: false, num:'$2.1M' },
+    { name: 'Retention',        pos:[64, 8],  spark:'M2 8 L10 11 L18 9 L26 14 L34 12 L42 17 L50 16',  red: true,  num:'47%' },
+    { name: 'NPS',              pos:[86, 6],  spark:'M2 10 L10 12 L18 9 L26 13 L34 11 L42 14 L50 10', red: false, num:'42' },
+    { name: 'Funnel CVR',       pos:[4, 28],  spark:'M2 14 L10 12 L18 15 L26 10 L34 13 L42 8 L50 11', red: false, num:'2.7%' },
+    { name: 'AOV',              pos:[28, 26], spark:'M2 16 L10 12 L18 14 L26 8 L34 11 L42 6 L50 9',   red: false, num:'$58' },
+    { name: 'Sessions',         pos:[54, 28], spark:'M2 9 L10 13 L18 10 L26 14 L34 11 L42 15 L50 12', red: true,  num:'1.2M' },
+    { name: 'Rev · Organic',    pos:[78, 26], spark:'M2 12 L10 10 L18 13 L26 9 L34 11 L42 7 L50 8',   red: false, num:'$3.1M' },
+    { name: 'Rev · Paid',       pos:[8, 48],  spark:'M2 10 L10 13 L18 11 L26 15 L34 13 L42 16 L50 14', red: true,  num:'$1.9M' },
+    { name: 'Rev · Referral',   pos:[32, 50], spark:'M2 13 L10 11 L18 14 L26 10 L34 12 L42 9 L50 11', red: false, num:'$840K' },
+    { name: 'Sessions · Organic', pos:[58, 48], spark:'M2 11 L10 14 L18 12 L26 16 L34 14 L42 17 L50 15', red: true, num:'620K' },
+    { name: 'Sessions · Paid',  pos:[82, 50], spark:'M2 9 L10 11 L18 8 L26 12 L34 10 L42 13 L50 9',    red: false, num:'310K' },
+    { name: 'CAC · Paid',       pos:[12, 70], spark:'M2 8 L10 11 L18 9 L26 13 L34 11 L42 15 L50 13',   red: true,  num:'$48' },
+    { name: 'LTV',              pos:[36, 72], spark:'M2 14 L10 12 L18 14 L26 9 L34 11 L42 7 L50 10',   red: false, num:'$284' },
+    { name: 'Churn',            pos:[60, 70], spark:'M2 10 L10 12 L18 11 L26 14 L34 13 L42 16 L50 17', red: true,  num:'4.2%' },
+    { name: 'Active Users',     pos:[84, 72], spark:'M2 13 L10 11 L18 13 L26 10 L34 12 L42 8 L50 10',  red: false, num:'92K' },
+  ];
+
+  const TREE_NODES = {
+    rev:    { x: 50, y: 14, label: 'Revenue',    tag: 'KPI',    appear: 0.52, root: true },
+    nu:     { x: 26, y: 38, label: 'New Rev',    tag: 'Driver', appear: 0.58 },
+    rep:    { x: 74, y: 38, label: 'Repeat Rev', tag: 'Driver', appear: 0.61 },
+    traf:   { x: 12, y: 64, label: 'Traffic',    tag: 'Input',  appear: 0.67 },
+    cvr:    { x: 36, y: 64, label: 'Conversion', tag: 'Input',  appear: 0.70 },
+    ord:    { x: 62, y: 64, label: 'Orders',     tag: 'Input',  appear: 0.73 },
+    aov:    { x: 86, y: 64, label: 'AOV',        tag: 'Input',  appear: 0.76 },
+    upt:    { x: 76, y: 88, label: 'UPT',        tag: 'Sub',    appear: 0.83 },
+    aur:    { x: 96, y: 88, label: 'AUR',        tag: 'Sub',    appear: 0.87 },
+  };
+  const TREE_EDGES = [
+    { from: 'rev', to: 'nu',    op: '+',  appear: 0.58 },
+    { from: 'rev', to: 'rep',   op: '+',  appear: 0.61 },
+    { from: 'nu',  to: 'traf',  op: '×',  appear: 0.67 },
+    { from: 'nu',  to: 'cvr',   op: '×',  appear: 0.70 },
+    { from: 'rep', to: 'ord',   op: '×',  appear: 0.73 },
+    { from: 'rep', to: 'aov',   op: '×',  appear: 0.76 },
+    { from: 'aov', to: 'upt',   op: '×',  appear: 0.83 },
+    { from: 'aov', to: 'aur',   op: '×',  appear: 0.87 },
+  ];
+
+  function SiloedToTreeAnimationE5() {
+    const t = useLoop(10000);
+    // Phases (10s loop): 0–0.03 idle; 0.03–0.34 silos drift in (16 cards);
+    // 0.34–0.44 dwell on full clutter (let the mess be felt); 0.44–0.52 silos dissolve;
+    // 0.52–0.92 tree builds; 0.92–1 short hold (don't linger on the finished tree)
+    const dissolve = seg(t, 0.44, 0.52);
+    const accent = useGetVar('--e3-accent-ink');
+    const muted = useGetVar('--e3-muted');
+    const ink = useGetVar('--e3-ink');
+    const line = useGetVar('--e3-line');
+
+    return (
+      <div className="e5-anim-frame" aria-hidden>
+        {/* Problem-phase tint — cooler grey while silos dominate, fades as tree resolves */}
+        <div className="e5-phase-tint" style={{ opacity: 1 - seg(t, 0.44, 0.56) }}/>
+        {/* Siloed cards */}
+        {SILOED.map((c, i) => {
+          const driftIn = seg(t, 0.03 + i*0.014, 0.13 + i*0.014);
+          const op = ease(driftIn) * (1 - dissolve*0.95);
+          const dx = (1 - ease(driftIn)) * (i % 2 === 0 ? -10 : 10);
+          const dy = (1 - ease(driftIn)) * (i < 8 ? -8 : 8);
+          const fadeMore = dissolve > 0.5 ? 0.04 : 1;
+          return (
+            <div key={c.name}
+              className="e5-sl-card"
+              style={{
+                left: `${c.pos[0]}%`, top: `${c.pos[1]}%`,
+                width: '20%',
+                opacity: op * fadeMore,
+                transform: `translate(${dx}px, ${dy}px)`,
+              }}>
+              <span>{c.name}{c.red && <span className="e5-sl-redot"/>}</span>
+              <div className="e5-sl-num">{c.num}</div>
+              <svg className="e5-sl-spark" viewBox="0 0 52 22" fill="none">
+                <path d={c.spark} stroke={c.red ? accent : ink} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          );
+        })}
+
+        {/* Tree wires */}
+        <svg className="e5-tree-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+          {TREE_EDGES.map((e, i) => {
+            const from = TREE_NODES[e.from], to = TREE_NODES[e.to];
+            const draw = seg(t, e.appear, e.appear + 0.06);
+            // Orthogonal: vertical down then horizontal then vertical
+            const midY = (from.y + to.y) / 2;
+            const path = `M${from.x} ${from.y+3} L${from.x} ${midY} L${to.x} ${midY} L${to.x} ${to.y-3}`;
+            return (
+              <path key={i} d={path} stroke={line} strokeWidth="0.4" fill="none" vectorEffect="non-scaling-stroke"
+                strokeDasharray="200" strokeDashoffset={(1 - draw) * 200}
+                style={{transition: 'stroke-dashoffset 0.4s'}}/>
+            );
+          })}
+        </svg>
+
+        {/* Tree nodes */}
+        {Object.entries(TREE_NODES).map(([key, n]) => {
+          const ap = seg(t, n.appear, n.appear + 0.05);
+          const litRev = key === 'aur' && t > 0.92 ? 1 : 0;
+          return (
+            <div key={key}
+              className={'e5-tree-node' + (n.root ? ' root' : '')}
+              style={{
+                left: `${n.x}%`, top: `${n.y}%`,
+                opacity: ease(ap),
+                transform: `translate(-50%, -50%) scale(${0.85 + 0.15*ease(ap)})`,
+                borderColor: litRev ? accent : undefined,
+                boxShadow: litRev ? '0 0 0 3px rgba(80,79,233,0.12)' : undefined,
+              }}>
+              <span className="e5-tn-tag">{n.tag}</span>
+              {n.label}
+            </div>
+          );
+        })}
+
+        {/* Edge glyphs */}
+        {TREE_EDGES.map((e, i) => {
+          const from = TREE_NODES[e.from], to = TREE_NODES[e.to];
+          const ap = seg(t, e.appear + 0.04, e.appear + 0.10);
+          return (
+            <div key={i} className="e5-tree-edge-glyph"
+              style={{ left: `${(from.x+to.x)/2}%`, top: `${(from.y+to.y)/2}%`, opacity: ease(ap) }}>
+              {e.op}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  function useGetVar(name) {
+    const [v, setV] = useState('');
+    useEffect(() => {
+      const update = () => setV(getComputedStyle(document.documentElement).getPropertyValue(name).trim());
+      update();
+      const id = setInterval(update, 600);
+      return () => clearInterval(id);
+    }, [name]);
+    return v;
+  }
+
+  // ────────────────────────────────────────────────────────
+  // §2 v2  Time pressure → Spotlight on AUR → anomaly band → segmentation
+  // ────────────────────────────────────────────────────────
+  function ClockToSpotlightAnimationE5() {
+    const t = useLoop(10000);
+    // Beats (in 0–1 cycle, ~10s) — clock phase short, 2nd half accelerated to the payoff:
+    // 0.00–0.07  clock + calendar spinning
+    // 0.07–0.12  dissolve to tree
+    // 0.10–0.20  tree spine builds (compressed)
+    // 0.22–0.30  edges + AUR go red (spotlight)
+    // 0.30–0.48  time-series with confidence band + anomaly
+    // 0.54–0.72  segmentation panel
+    // 0.72–1.00  hold
+
+    const clockOp = 1 - seg(t, 0.07, 0.12);
+    const treeAppear = seg(t, 0.10, 0.20);
+    const lit = seg(t, 0.22, 0.30);
+    const tsOp = seg(t, 0.30, 0.39) * (1 - seg(t, 0.50, 0.58));
+    const tsBandOp = seg(t, 0.33, 0.42) * (1 - seg(t, 0.50, 0.58));
+    const tsAnomalyOp = seg(t, 0.38, 0.44) * (1 - seg(t, 0.50, 0.58));
+    const segOp = seg(t, 0.54, 0.64);
+    const segBars = seg(t, 0.58, 0.70);
+
+    // Clock hand rotation — even faster since we have less time on screen
+    const minuteR = (t * 24 * 360) % 360;
+    const hourR = (t * 24 * 30) % 360;
+    // Calendar day flipping (1..28) — faster
+    const day = 1 + Math.floor(((t * 24) % 1) * 28);
+    const monIdx = Math.floor(t * 9) % 4;
+    const months = ['JAN','FEB','MAR','APR'];
+
+    // Tree spine: Revenue → Repeat → AOV → (UPT, AUR)
+    const TN = {
+      rev:    { x: 50, y: 14, label: 'Revenue',   appear: 0.10, root: true },
+      repeat: { x: 50, y: 30, label: 'Repeat',    appear: 0.13 },
+      aov:    { x: 50, y: 46, label: 'AOV',       appear: 0.16 },
+      upt:    { x: 30, y: 64, label: 'UPT',       appear: 0.18 },
+      aur:    { x: 70, y: 64, label: 'AUR',       appear: 0.19, target: true },
+    };
+    const TE = [
+      { from:'rev',    to:'repeat', label:'+',      appear: 0.13, neg: false },
+      { from:'repeat', to:'aov',    label:'−$340K', appear: 0.16, neg: true },
+      { from:'aov',    to:'upt',    label:'×',      appear: 0.18, neg: false },
+      { from:'aov',    to:'aur',    label:'−$180K', appear: 0.19, neg: true },
+    ];
+
+    // Time-series: AUR with confidence band + anomaly
+    const tsW = 100, tsH = 28;
+    const tsLine = [12,14,13,15,14,16,15,17,16,15,17,16,18,8]; // last point dips far
+    const tsHi = tsLine.map(v => v + 3);
+    const tsLo = tsLine.map(v => v - 3);
+    const lineD = tsLine.map((p, i) => `${i===0?'M':'L'}${(i/(tsLine.length-1))*tsW} ${tsH-p}`).join(' ');
+    const bandD = tsHi.map((p,i) => `${i===0?'M':'L'}${(i/(tsLine.length-1))*tsW} ${tsH-p}`).join(' ')
+      + ' ' + tsLo.slice().reverse().map((p,i) => `L${((tsLine.length-1-i)/(tsLine.length-1))*tsW} ${tsH-p}`).join(' ') + ' Z';
+    const lastIdx = tsLine.length - 1;
+    const anomX = (lastIdx/(tsLine.length-1))*tsW;
+    const anomY = tsH - tsLine[lastIdx];
+
+    return (
+      <div className="e5-anim-frame" aria-hidden>
+        {/* Problem-phase tint — cooler while clock dominates, fades as tree resolves */}
+        <div className="e5-phase-tint" style={{ opacity: 1 - seg(t, 0.07, 0.18) }}/>
+        {/* Clock */}
+        <div className="e5-clock" style={{ left:'36%', opacity: clockOp, transform: `translate(-50%,-50%) scale(${1 - 0.1*(1-clockOp)})` }}>
+          {Array.from({length: 12}).map((_, i) => (
+            <div key={i} className="e5-clock-tick" style={{ transform: `rotate(${i*30}deg) translateX(-0.5px)` }}/>
+          ))}
+          <div className="e5-clock-hand h" style={{ transform: `translate(-50%,0) rotate(${hourR}deg)` }}/>
+          <div className="e5-clock-hand m" style={{ transform: `translate(-50%,0) rotate(${minuteR}deg)` }}/>
+          <div className="e5-clock-pivot"/>
+        </div>
+        {/* Calendar */}
+        <div className="e5-cal" style={{ opacity: clockOp, transform: `translate(-50%,-50%) scale(${1 - 0.1*(1-clockOp)})` }}>
+          <div className="e5-cal-top">{months[monIdx]}</div>
+          <div className="e5-cal-day">{String(day).padStart(2,'0')}</div>
+          <div className="e5-cal-mon">2026</div>
+        </div>
+
+        {/* Tree spine + edges */}
+        <svg className="e5-tree-svg" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ opacity: treeAppear }}>
+          {TE.map((e, i) => {
+            const from = TN[e.from], to = TN[e.to];
+            const ap = seg(t, e.appear, e.appear + 0.04);
+            const isLit = e.neg && lit > 0.2;
+            const path = `M${from.x} ${from.y+3} L${from.x} ${(from.y+to.y)/2} L${to.x} ${(from.y+to.y)/2} L${to.x} ${to.y-3}`;
+            return <path key={i} d={path}
+              stroke={isLit ? 'var(--e3-neg)' : 'var(--e3-line)'}
+              strokeWidth={isLit ? 0.7 : 0.4}
+              fill="none" vectorEffect="non-scaling-stroke"
+              strokeDasharray="180" strokeDashoffset={(1 - ap) * 180}/>;
+          })}
+        </svg>
+
+        {Object.entries(TN).map(([k, n]) => {
+          const ap = seg(t, n.appear, n.appear + 0.04);
+          const isTarget = n.target && lit > 0.3;
+          const dim = lit > 0.4 && !isTarget && k !== 'rev' && k !== 'repeat' && k !== 'aov';
+          return (
+            <div key={k}
+              className={'e5-spine-node' + (n.root ? ' root' : '') + (isTarget ? ' lit' : '') + (dim ? ' dim' : '')}
+              style={{ left: `${n.x}%`, top: `${n.y}%`, opacity: ease(ap) * (treeAppear) }}>
+              {n.label}
+            </div>
+          );
+        })}
+        {/* Edge labels */}
+        {TE.map((e, i) => {
+          const from = TN[e.from], to = TN[e.to];
+          const ap = seg(t, e.appear + 0.03, e.appear + 0.08);
+          const isLit = e.neg && lit > 0.3;
+          return (
+            <div key={i}
+              className={'e5-spine-edge-label' + (isLit ? ' lit' : '')}
+              style={{
+                left: `${(from.x+to.x)/2}%`,
+                top: `${(from.y+to.y)/2}%`,
+                opacity: ease(ap) * treeAppear,
+              }}>
+              {e.label}
+            </div>
+          );
+        })}
+
+        {/* Time-series detail panel */}
+        {tsOp > 0.05 && (
+          <div className="e5-detail-panel" style={{ opacity: tsOp, transform: `translateY(${(1-tsOp)*10}px)` }}>
+            <div className="e5-detail-head">
+              <span className="e5-detail-title">AUR · 14 day trend</span>
+              <span className="e5-dh-tag">● Anomaly detected</span>
+            </div>
+            <svg viewBox={`0 0 ${tsW} ${tsH+4}`} preserveAspectRatio="none" style={{width:'100%', height: 56, display:'block'}}>
+              <path d={bandD} fill="rgba(20,22,26,0.08)" stroke="none" opacity={tsBandOp}/>
+              <path d={lineD} stroke="var(--e3-ink)" strokeWidth="1" fill="none" vectorEffect="non-scaling-stroke"/>
+              {tsAnomalyOp > 0.2 && (
+                <g opacity={tsAnomalyOp}>
+                  <circle cx={anomX} cy={anomY} r="2.4" fill="var(--e3-neg)"/>
+                  <circle cx={anomX} cy={anomY} r="5" fill="none" stroke="var(--e3-neg)" strokeWidth="0.5" opacity="0.6"/>
+                </g>
+              )}
+            </svg>
+            {tsAnomalyOp > 0.4 && (
+              <div className="e5-anomaly-flag" style={{ left: `${(anomX/tsW)*100}%`, top: 24, opacity: tsAnomalyOp }}>
+                Outside band · −38%
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Segmentation panel (replaces time-series) */}
+        {segOp > 0.05 && (
+          <div className="e5-detail-panel" style={{ opacity: segOp, transform: `translateY(${(1-segOp)*10}px)` }}>
+            <div className="e5-detail-head">
+              <span className="e5-detail-title">AUR by Channel</span>
+              <span className="e5-dh-tag">Ecomm driving the drop</span>
+            </div>
+            {[
+              { name:'Ecomm',     pct:-22, neg:true },
+              { name:'Retail',    pct:-1,  neg:false },
+              { name:'Wholesale', pct: 1,  neg:false },
+            ].map((r, i) => {
+              const w = segBars * Math.min(Math.abs(r.pct), 28) * 1.6;
+              return (
+                <div className="e5-seg-row" key={r.name} style={{ ['--row-delay']: `${i*0.1}s` }}>
+                  <span>{r.name}</span>
+                  <div className="e5-seg-bar-wrap">
+                    {r.neg
+                      ? <div className="e5-seg-bar" style={{ width: `${w}%`, right: '50%', left: 'auto', background: 'var(--e3-neg)', transitionDelay: `${i*0.1}s` }}/>
+                      : <div className="e5-seg-bar" style={{ width: `${w}%`, left: '50%', background: 'var(--e3-ink-2, #555)', opacity: 0.5, transitionDelay: `${i*0.1}s` }}/>
+                    }
+                  </div>
+                  <span className="e5-seg-pct" style={{ color: r.neg ? 'var(--e3-neg)' : 'var(--e3-muted)'}}>
+                    {r.pct > 0 ? '+' : ''}{r.pct}%
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ────────────────────────────────────────────────────────
+  // §3 v2  AutoScan: pills → activate channel → partnerships→paid social
+  // ────────────────────────────────────────────────────────
+  function AutoScanChatAnimationE5() {
+    const t = useLoop(11000);
+    // Beats (11s):
+    // 0.04–0.09  user message
+    // 0.11–0.40  AutoScan running status — counts up from 0 to 20,242 (longer linger)
+    // 0.36–0.46  result pills appear (HIGH/MED/LOW)
+    // 0.56–0.64  cohort + plan rows fade out, channel highlights "active"
+    // 0.64–0.74  nested partnerships→paid social shift appears
+    // 0.74–0.82  explanation types in with 92% highlight
+    // 0.82–1.00  hold
+
+    const userOp = seg(t, 0.04, 0.09);
+    const statusOp = seg(t, 0.11, 0.18) * (1 - seg(t, 0.36, 0.42));
+    const statusProgress = seg(t, 0.11, 0.36); // 0→1 across the scan
+    const scanCount = Math.round(20242 * Math.min(1, statusProgress));
+    const resultOp = seg(t, 0.36, 0.44);
+    const fadeOthers = seg(t, 0.56, 0.64);
+    const activate = seg(t, 0.58, 0.66);
+    const nestedOp = seg(t, 0.64, 0.72);
+    const explainOp = seg(t, 0.74, 0.80);
+    const hi = seg(t, 0.78, 0.84);
+
+    const drivers = [
+      { name: 'Acquisition Channel', impact: 'HIGH', cls: 'high', stays: true },
+      { name: 'Cohort Tenure',       impact: 'MED',  cls: 'med',  stays: false },
+      { name: 'Plan Tier',           impact: 'LOW',  cls: 'low',  stays: false },
+    ];
+
+    return (
+      <div className="e5-anim-frame" aria-hidden>
+        <div className="e5-chat">
+          <div className={'e5-chat-bubble agent' + (userOp > 0.3 ? ' show' : '')}>
+            Checking drivers for churn rate increase last week
+          </div>
+
+          {statusOp > 0.15 && (
+            <div className="e5-chat-bubble status show" style={{ opacity: statusOp }}>
+              <span className="e5-spinner"/> AutoScan · scanning {scanCount.toLocaleString()} segments
+            </div>
+          )}
+
+          {resultOp > 0.1 && (
+            <div className="e5-chat-bubble result show" style={{ opacity: resultOp, padding: '12px 14px' }}>
+              <div className="e5-result-head">Top drivers</div>
+              {drivers.map((d, i) => {
+                const isActive = d.stays && activate > 0.4;
+                const op = d.stays ? 1 : (1 - fadeOthers);
+                const h = d.stays ? 'auto' : (fadeOthers > 0.7 ? 0 : 'auto');
+                return (
+                  <div key={d.name}
+                    className={'e5-driver-row-v2' + (isActive ? ' active' : '')}
+                    style={{
+                      opacity: op,
+                      transform: d.stays && isActive ? 'translateX(0)' : (d.stays ? 'translateX(0)' : `translateX(${fadeOthers*-12}px)`),
+                      maxHeight: d.stays ? 80 : (fadeOthers > 0.7 ? 0 : 80),
+                      marginTop: i === 0 ? 0 : 4,
+                      paddingTop: d.stays ? 8 : (fadeOthers > 0.7 ? 0 : 8),
+                      paddingBottom: d.stays ? 8 : (fadeOthers > 0.7 ? 0 : 8),
+                      overflow: 'hidden',
+                      transition: 'all 0.5s ease',
+                    }}>
+                    <span className="e5-d-name">{d.name}</span>
+                    <span className={'e5-impact-pill ' + d.cls}>{d.impact}</span>
+                  </div>
+                );
+              })}
+
+              {nestedOp > 0.1 && (
+                <div className="e5-nested" style={{ opacity: nestedOp, transform: `translateY(${(1-nestedOp)*6}px)` }}>
+                  <div className="e5-nested-h">Within Acquisition Channel</div>
+                  <div className="e5-shift">
+                    <span className="e5-shift-from">Partnerships</span>
+                    <span className="e5-shift-arrow">→</span>
+                    <span className="e5-shift-to">Paid Social</span>
+                  </div>
+                  {explainOp > 0.2 && (
+                    <div className="e5-explain" style={{ opacity: explainOp }}>
+                      Channel mix shift explains{' '}
+                      <span className="e5-hi" style={{ background: hi > 0.3 ? undefined : 'transparent', transition: 'background 0.4s ease' }}>92%</span>{' '}
+                      of the lift. Within-channel churn unchanged.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+    const ANIMS = {
+      '01': { fn: SiloedToTreeAnimationE5, label: '01 / Siloed → Tree', sub: '10s loop · §1 · Siloed dashboards collapse into metric tree' },
+      '02': { fn: ClockToSpotlightAnimationE5, label: '02 / Clock → Spotlight', sub: '10s loop · §2 · Time pressure → spotlit driver, anomaly band, segmentation' },
+      '03': { fn: AutoScanChatAnimationE5, label: '03 / AutoScan Chat', sub: '11s loop · §3 · AutoScan finds the driver inside a driver' },
+    };
+
+    function getInitialAnim() {
+      const u = new URLSearchParams(location.search);
+      const a = u.get('anim');
+      if (ANIMS[a]) return a;
+      return '01';
+    }
+
+    function App() {
+      const [active, setActive] = useState(getInitialAnim());
+      useEffect(() => {
+        const u = new URLSearchParams(location.search);
+        if (u.get('embed') === '1' || u.get('anim')) {
+          document.body.classList.add('embed');
+        }
+      }, []);
+      const Anim = ANIMS[active].fn;
+
+      return (
+        <div className="host">
+          <div className="host-head">
+            <div className="title">
+              <b>Trace</b> · Section animations
+              <span className="meta">{ANIMS[active].sub}</span>
+            </div>
+            <div className="host-tabs">
+              {Object.entries(ANIMS).map(([k, v]) => (
+                <button key={k}
+                  className={'host-tab' + (k === active ? ' active' : '')}
+                  onClick={() => setActive(k)}>
+                  {v.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="host-stage">
+            <div className="frame-wrap">
+              <Anim/>
+            </div>
+          </div>
+          <div className="host-foot">
+            Embed individually with <code>?anim=01</code> · <code>?anim=02</code> · <code>?anim=03</code> — appends remove the chrome.
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  })();
+  </script>
+</body>
+</html>
